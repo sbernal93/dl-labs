@@ -1,11 +1,14 @@
 from __future__ import division
 
+import argparse
+
 import numpy as np
 
 import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
 from matplotlib import animation
+from mpl_toolkits.mplot3d import Axes3D
 
 import keras
 from keras import activations
@@ -16,18 +19,6 @@ from keras.models import Sequential
 from keras.preprocessing.text import Tokenizer
 from keras.utils import plot_model
 from sklearn.metrics import classification_report,confusion_matrix
-
-from vis.losses import ActivationMaximization
-from vis.regularizers import TotalVariation, LPNorm
-from vis.optimizer import Optimizer
-from vis.utils import utils
-from vis.visualization import visualize_saliency
-
-from vis.callbacks import GifGenerator
-#from vis.utils.vggnet import VGG16
-
-from mpl_toolkits.mplot3d import Axes3D
-#from IPython.display import HTML
 
 from autograd import elementwise_grad, value_and_grad
 from scipy.optimize import minimize
@@ -43,6 +34,9 @@ results_history = []
 results_score = []
 results_acc = []
 path_ = []
+line = None
+point = None
+f = None
 
 print 'Using Keras version', keras.__version__
 
@@ -180,6 +174,8 @@ def visOptimizations(conf):
 	return
 
 def bealeFunction(conf): 
+	global line, point, path, f
+
 	f  = lambda x, y: (1.5 - x + x*y)**2 + (2.25 - x + x*y**2)**2 + (2.625 - x + x*y**3)**2
 
 	xmin, xmax, xstep = -4.5, 4.5, .2
@@ -214,7 +210,7 @@ def bealeFunction(conf):
 	ax.set_ylabel('$y$')
 	ax.set_zlabel('$z$')
 
-	ax.set_xlim((xmin, xmax))
+	ax.set_xlim((xmin, xmax)) 
 	ax.set_ylim((ymin, ymax))
 
 	anim = animation.FuncAnimation(fig, animate, init_func=init,
@@ -331,7 +327,7 @@ def main():
 	#comPlot(results_history, results_score, results_acc, conf)
 
 	#if args.test_function:
-	visOptimizations()
+	visOptimizations(conf)
 
 if __name__ == '__main__':
 	main()
