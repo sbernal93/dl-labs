@@ -1,7 +1,7 @@
-Test score sgd: 1.45674826264Test accuracy sgd: 0.676313446153 
-Test score adam: 0.884994627213Test accuracy adam: 0.79964381122 
-Test score rmsprop: 1.26002353594Test accuracy rmsprop: 0.788958147871 
-Test score adagrad: 1.29238383449Test accuracy adagrad: 0.787622439893 
-Test score adamax: 1.31058697454Test accuracy adamax: 0.792965271594 
-Test score adadelta: 1.40217107189Test accuracy adadelta: 0.789403383793 
-Test score nadam: 1.36992293326Test accuracy nadam: 0.780498664345 
+Test score sgd: 1.45676807432Test accuracy sgd: 0.675422974203 
+Test score adam: 0.884061655187Test accuracy adam: 0.79875333927 
+Test score rmsprop: 1.26670407909Test accuracy rmsprop: 0.792074799697 
+Test score adagrad: 1.27394366731Test accuracy adagrad: 0.791629563669 
+Test score adamax: 1.31769559029Test accuracy adamax: 0.795191451522 
+Test score adadelta: 1.39858065539Test accuracy adadelta: 0.790293855744 
+Test score nadam: 1.38916806525Test accuracy nadam: 0.780943900267 

@@ -1,8 +1,14 @@
 from __future__ import division
+
 import numpy as np
+
 import matplotlib
 import matplotlib.pyplot as plt
+from matplotlib.colors import LogNorm
+from matplotlib import animation
+
 import keras
+from keras import activations
 from keras.datasets import reuters
 from keras.layers import Dense, Dropout, Activation
 from keras.models import model_from_json
@@ -11,12 +17,51 @@ from keras.preprocessing.text import Tokenizer
 from keras.utils import plot_model
 from sklearn.metrics import classification_report,confusion_matrix
 
+from vis.losses import ActivationMaximization
+from vis.regularizers import TotalVariation, LPNorm
+from vis.optimizer import Optimizer
+from vis.utils import utils
+from vis.visualization import visualize_saliency
+
+from vis.callbacks import GifGenerator
+#from vis.utils.vggnet import VGG16
+
+from mpl_toolkits.mplot3d import Axes3D
+#from IPython.display import HTML
+
+from autograd import elementwise_grad, value_and_grad
+from scipy.optimize import minimize
+from collections import defaultdict
+from itertools import izip_longest
+from functools import partial
+
 # Basic config
 max_words = 1000
 batch_size = 32
 epochs = 5
+results_history = []
+results_score = []
+results_acc = []
+path_ = []
 
 print 'Using Keras version', keras.__version__
+
+np.random.seed(1)
+
+parser = argparse.ArgumentParser(
+	description='Uses the Reuters dataset to compare the results of different optimization functions')
+	
+parser.add_argument('-w', '--words', action='store_true', default=1000,
+	help='max words to use (default: 1000)')
+parser.add_argument('-b', '--batch_size', action='store_true', default=32,
+	help='size of batches to use (default: 32)')
+parser.add_argument('-e', '--epochs', action='store_true', default=5,
+	help='amount of epochs to use (default: 5)')
+parser.add_argument('-f', '--test_function', action='store_true', default=False,
+	help='visualize optimizations using test functions (default: false)')
+
+
+args = parser.parse_args()
 
 def calculateModel(model, x_train, x_test, y_train, y_test, optimizer, epochs) :
 
@@ -35,24 +80,32 @@ def calculateModel(model, x_train, x_test, y_train, y_test, optimizer, epochs) :
 	                       batch_size=batch_size, verbose=1)
 
 	print 'Test score:', score[0]
-	print 'Test accuracy:', score[1]
+	print ' Test accuracy:', score[1]
+
+	results_score.append(score[0])
+	results_acc.append(score[1])
+	results_history.append(history)
+
+	#vis(model, x_train, x_test, y_train, y_test, optimizer)
 
 	#Accuracy plot
 	plt.plot(history.history['acc'])
+	plt.plot(history.history['val_acc'])
 	plt.title('model accuracy')
 	plt.ylabel('accuracy')
 	plt.xlabel('epoch')
-	plt.legend(['train'], loc='upper left')
+	plt.legend(['train', 'val'], loc='upper left')
 	plt.savefig('results/model_accuracy_' + optimizer +'.png')
 	plt.close()
 	#Loss plot
 	plt.plot(history.history['loss'])
+	plt.plot(history.history['val_loss'])
 	plt.title('model loss')
 	plt.ylabel('loss')
 	plt.xlabel('epoch')
-	plt.legend(['train'], loc='upper left')
+	plt.legend(['train', 'val'], loc='upper left')
 	plt.savefig('results/model_loss_' + optimizer + '.png')
-
+	plt.close()
 	#plot_model(model, to_file='results/model_' + optimizer + '.png')
 
 	f = open('results/results.txt', 'a+')
@@ -62,8 +115,149 @@ def calculateModel(model, x_train, x_test, y_train, y_test, optimizer, epochs) :
 	
 	return
 
+def vis(model, x_train, x_test, y_train, y_test, optimizer):
+
+	class_idx = 0
+	indices = np.where(y_test[:, class_idx] == 1.)[0]
+
+	# pick some random input from here.
+	idx = indices[0]
+	# Utility to search for layer index by name. 
+	# Alternatively we can specify this as -1 since it corresponds to the last layer.
+	layer_idx = utils.find_layer_idx(model, 'preds')
+
+	# Swap softmax with linear
+	model.layers[layer_idx].activation = activations.linear
+	model = utils.apply_modifications(model)
+
+	grads = visualize_saliency(model, layer_idx, filter_indices=class_idx, seed_input=x_test[idx])
+	# Plot with 'jet' colormap to visualize as a heatmap.
+	
+	plt.savefig('results/vis1_' + optimizer + '.png')
+
+	for class_idx in np.arange(10):    
+		indices = np.where(y_test[:, class_idx] == 1.)[0]
+		idx = indices[0]
+
+		f, ax = plt.subplots(1, 4)
+		ax[0].imshow(x_test[idx][..., 0])
+		ax[0].savefig('results/vis2_' + optimizer + '.png')
+
+		for i, modifier in enumerate([None, 'guided', 'relu']):
+			grads = visualize_saliency(model, layer_idx, filter_indices=class_idx, 
+						seed_input=x_test[idx], backprop_modifier=modifier)
+			if modifier is None:
+				modifier = 'vanilla'
+			ax[i+1].set_title(modifier)    
+			ax[i+1].imshow(grads, cmap='jet')
+			ax[i+1].savefig('results/vis3_' + optimizer + '.png')
+	return
+
+def init():
+    line.set_data([], [])
+    line.set_3d_properties([])
+    point.set_data([], [])
+    point.set_3d_properties([])
+    return line, point
+
+def animate(i):
+    line.set_data(path[0,:i], path[1,:i])
+    line.set_3d_properties(f(*path[::,:i]))
+    point.set_data(path[0,i-1:i], path[1,i-1:i])
+    point.set_3d_properties(f(*path[::,i-1:i]))
+    return line, point
+
+def make_minimize_cb(path=[]):
+    
+    def minimize_cb(xk):
+        # note that we make a deep copy of xk
+        path.append(np.copy(xk))
+
+    return minimize_cb
+
+def visOptimizations(conf):
+	bealeFunction(conf)
+	return
+
+def bealeFunction(conf): 
+	f  = lambda x, y: (1.5 - x + x*y)**2 + (2.25 - x + x*y**2)**2 + (2.625 - x + x*y**3)**2
+
+	xmin, xmax, xstep = -4.5, 4.5, .2
+	ymin, ymax, ystep = -4.5, 4.5, .2
+	x, y = np.meshgrid(np.arange(xmin, xmax + xstep, xstep), np.arange(ymin, ymax + ystep, ystep))
+	z = f(x, y)
+	minima = np.array([3., .5])
+	minima_ = minima.reshape(-1, 1)
+
+	x0 = np.array([3., 4.])
+	func = value_and_grad(lambda args: f(*args))
+
+	path_ = [x0]
+
+	res = minimize(func, x0=x0, method='Newton-CG',
+               jac=True, tol=1e-20, callback=make_minimize_cb(path_))
+
+
+	path = np.array(path_).T
+
+	#3D surface plot
+	fig = plt.figure(figsize=(8, 5))
+	ax = plt.axes(projection='3d', elev=50, azim=-50)
+
+	ax.plot_surface(x, y, z, norm=LogNorm(), rstride=1, cstride=1, edgecolor='none', alpha=.8, cmap=plt.cm.jet)
+	ax.plot(minima_[0], minima_[1], f(minima_[0], minima_[1]), 'r*', markersize=10)
+
+	line, = ax.plot([], [], [], 'b', label='Newton-CG', lw=2)
+	point, = ax.plot([], [], [], 'bo')
+
+	ax.set_xlabel('$x$')
+	ax.set_ylabel('$y$')
+	ax.set_zlabel('$z$')
+
+	ax.set_xlim((xmin, xmax))
+	ax.set_ylim((ymin, ymax))
+
+	anim = animation.FuncAnimation(fig, animate, init_func=init,
+                               frames=path.shape[1], interval=60, 
+                               repeat_delay=5, blit=True)
+	anim.save('basic_animation.mp4', fps=30, extra_args=['-vcodec', 'libx264'])
+
+	return
+
+def comPlot(results_history, results_score, results_acc, conf): 
+	for history in results_history:
+		plt.plot(history.history['acc'])
+	plt.legend(['sgd','adam','rmsprop','adagrad','adamax','adadelta','nadam'], loc='upper left')
+	plt.title('model accuracy')
+	plt.ylabel('accuracy')
+	plt.xlabel('epoch')
+	plt.savefig('results/total_model_accuracy.png')
+	plt.close()
+
+	x = [0,1,2,3,4,5,6]
+
+	plt.scatter(x, results_score)
+	for i,c in enumerate(conf):
+		plt.annotate(c, (x[i], results_score[i]))
+
+	plt.title('model score')
+	plt.savefig('results/total_opt_score.png')
+	plt.close()
+
+	plt.scatter(x, results_acc)
+	for i,c in enumerate(conf):
+		plt.annotate(c, (x[i], results_acc[i]))
+
+	plt.title('optimization accuracy')
+	plt.savefig('results/total_opt_acc.png')
+	plt.close()
+	return
+
 def main():
 
+	max_words = args.words
+	epochs = args.epochs
+	batch_size = args.batch_size
 	# Loads reuters dataset 
 	# Dataset of 11,228 newswires from Reuters, labeled over 46 topics.
 	# Each wire is encoded as a sequence of word indexes.
@@ -77,7 +271,7 @@ def main():
 	# https://keras.io/datasets/
 	# https://keras.io/preprocessing/sequence/
 
-	(x_train, y_train), (x_test, y_test) = reuters.load_data(path="reuters.npz",
+	(x_train, y_train), (x_test, y_test)  = reuters.load_data(path="reuters.npz",
 		num_words=None,skip_top=0,maxlen=None,test_split=0.2,seed=113,start_char=1,
 		oov_char=2,index_from=3)
 
@@ -126,14 +320,18 @@ def main():
 	model.add(Dense(512, input_shape=(max_words,)))
 	model.add(Activation('relu'))
 	model.add(Dropout(0.5))
-	model.add(Dense(num_classes))
-	model.add(Activation('softmax'))
+	model.add(Dense(num_classes, activation='softmax', name='preds'))
+	#model.add(Activation('softmax'))
 
 	conf = ['sgd','adam','rmsprop','adagrad','adamax','adadelta','nadam']
 
-	for o in conf:
-		calculateModel(model, x_train, x_test, y_train, y_test, o, epochs)
+	#for o in conf:
+		#calculateModel(model, x_train, x_test, y_train, y_test, o, epochs)
 
+	#comPlot(results_history, results_score, results_acc, conf)
+
+	#if args.test_function:
+	visOptimizations()
 
 if __name__ == '__main__':
 	main()

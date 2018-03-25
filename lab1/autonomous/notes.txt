@@ -1,0 +1,11 @@
+https://arxiv.org/pdf/1412.6544.pdf
+
+vis
+https://github.com/raghakot/keras-vis/blob/master/examples/mnist/attention.ipynb
+https://raghakot.github.io/keras-vis/vis.visualization/
+https://raghakot.github.io/keras-vis/
+https://keras.io/losses/#usage-of-loss-functions
+
+https://hackernoon.com/visualizing-parts-of-convolutional-neural-networks-using-keras-and-cats-5cc01b214e59
+
+https://imgur.com/a/Hqolp
