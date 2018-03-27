@@ -26,6 +26,13 @@ from collections import defaultdict
 from itertools import izip_longest
 from functools import partial
 
+import tensorflow as tf
+
+from tqdm import tqdm
+from matplotlib import pyplot as plt
+from sklearn.datasets import make_moons
+
+
 # Basic config
 max_words = 1000
 batch_size = 32
@@ -249,6 +256,60 @@ def comPlot(results_history, results_score, results_acc, conf):
 	plt.close()
 	return
 
+
+def plot_loss_contour(trX, trY, ngrid):
+    X = tf.placeholder(tf.float32, [None, nx])
+    Y = tf.placeholder(tf.float32, [None, ny])
+    W = tf.placeholder(tf.float32, [nx, ny])
+
+    w = tf.Variable(np.random.randn(2, 1))
+    y = tf.matmul(X, W)
+
+    loss = tf.nn.sigmoid_cross_entropy_with_logits(logits=y, labels=Y)
+    loss = tf.reduce_mean(loss)
+
+    wx, wy = np.meshgrid(np.linspace(-2, 5, ngrid), np.linspace(-5, 2, ngrid))
+    ws = np.stack([wx.flatten(), wy.flatten()], 1)[:, :, np.newaxis]
+
+    config = tf.ConfigProto(allow_soft_placement=True,
+                            intra_op_parallelism_threads=4,
+                            inter_op_parallelism_threads=4)
+    with tf.Session(config=config) as sess:
+        tf.global_variables_initializer().run()
+        zs = []
+        for w in tqdm(ws):
+            z = sess.run(loss, {X:trX, Y:trY, W:w})
+            zs.append(z)
+        zs = np.asarray(zs).reshape(ngrid, ngrid)
+    plt.contour(wx, wy, zs, 40)
+    best_ws = ws[np.argmin(zs.flatten())]
+    plt.scatter(best_ws[0], best_ws[1])
+
+def w_trajectory(trX, trY, opt, nbatch, niter):
+    nx = trX.shape[1]
+    ny = trY.shape[1]
+    X = tf.placeholder(tf.float32, [None, nx])
+    Y = tf.placeholder(tf.float32, [None, ny])
+
+    wnp = np.asarray([[-0.5], [1.5]], dtype=np.float32)
+    w = tf.Variable(wnp)
+    y = tf.matmul(X, w)
+
+    loss = tf.nn.sigmoid_cross_entropy_with_logits(logits=y, labels=Y)
+    loss = tf.reduce_mean(loss)
+    train = opt.minimize(loss)
+
+    with tf.Session() as sess:
+        tf.global_variables_initializer().run()
+        ws = []
+        for i in range(niter):
+            batch_idxs = np.random.permutation(np.arange(ntrain))[:nbatch]
+            iterate_w, _ = sess.run([w, train], {X:trX[batch_idxs], Y:trY[batch_idxs]})
+            ws.append(iterate_w)
+        ws = np.asarray(ws)
+    return ws
+
+
 def main():
 
 	max_words = args.words
@@ -329,5 +390,31 @@ def main():
 	#if args.test_function:
 	visOptimizations(conf)
 
+
 if __name__ == '__main__':
+	
+	seed = 42
+	ntrain = 1000
+	nbatch = 16
+	np.random.seed(seed)
+	trX, trY = make_moons(n_samples=ntrain, shuffle=True, noise=0.3, random_state=seed)
+	trX = trX.astype(np.float32)
+	trY = trY.astype(np.float32)[:, np.newaxis]
+	nx = trX.shape[1]
+	ny = trY.shape[1]
+
+	plot_loss_contour(trX, trY, ngrid=101)
+
+	sgd = tf.train.GradientDescentOptimizer(learning_rate=0.5)
+	sgd_ws = w_trajectory(trX, trY, sgd, nbatch=16, niter=200)
+    
+	mom = tf.train.MomentumOptimizer(learning_rate=0.075, momentum=0.94)
+	mom_ws = w_trajectory(trX, trY, mom, nbatch=16, niter=200)
+    
+	plt.plot(sgd_ws[:, 0, 0], sgd_ws[:, 1, 0], label='sgd')
+	plt.plot(mom_ws[:, 0, 0], mom_ws[:, 1, 0], label='momentum')
+	plt.legend()
+	plt.ylim([-5, 2])
+	plt.xlim([-2, 5])
+	plt.savefig('test')
 	main()
