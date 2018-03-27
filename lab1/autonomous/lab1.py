@@ -410,9 +410,29 @@ if __name__ == '__main__':
     
 	mom = tf.train.MomentumOptimizer(learning_rate=0.075, momentum=0.94)
 	mom_ws = w_trajectory(trX, trY, mom, nbatch=16, niter=200)
+
+	adadelta = tf.train.AdadeltaOptimizer(learning_rate=0.05)
+	adadelta_ws = w_trajectory(trX, trY, adadelta, nbatch=16, niter=200)
+
+	adagrad = tf.train.AdagradOptimizer(learning_rate=0.5)
+	adagrad_ws = w_trajectory(trX, trY, adagrad, nbatch=16, niter=200)
+
+	#adamax = tf.keras.optimizers.Adamax(lr=0.001)
+	#adamax_ws = w_trajectory(trX, trY, adamax, nbatch=16, niter=200)
+
+	rmsprop = tf.train.RMSPropOptimizer(learning_rate=0.01)
+	rmsprop_ws = w_trajectory(trX, trY, rmsprop, nbatch=16, niter=200)
+
+	nadam = tf.contrib.opt.NadamOptimizer(learning_rate=0.07)
+	nadam_ws = w_trajectory(trX, trY, nadam, nbatch=16, niter=200)
     
 	plt.plot(sgd_ws[:, 0, 0], sgd_ws[:, 1, 0], label='sgd')
 	plt.plot(mom_ws[:, 0, 0], mom_ws[:, 1, 0], label='momentum')
+	plt.plot(adadelta_ws[:, 0, 0], adadelta_ws[:, 1, 0], label='adadelta')
+	plt.plot(adagrad_ws[:, 0, 0], adagrad_ws[:, 1, 0], label='adagrad')
+	#plt.plot(adamax_ws[:, 0, 0], adamax_ws[:, 1, 0], label='adamax')
+	plt.plot(rmsprop_ws[:, 0, 0], rmsprop_ws[:, 1, 0], label='rmsprop')
+	plt.plot(nadam_ws[:, 0, 0], nadam_ws[:, 1, 0], label='nadam')
 	plt.legend()
 	plt.ylim([-5, 2])
 	plt.xlim([-2, 5])
