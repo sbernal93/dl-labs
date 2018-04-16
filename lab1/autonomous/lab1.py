@@ -1,7 +1,7 @@
 from __future__ import division
 
 import argparse
-
+import os
 import numpy as np
 
 import matplotlib
@@ -31,12 +31,13 @@ import tensorflow as tf
 from tqdm import tqdm
 from matplotlib import pyplot as plt
 from sklearn.datasets import make_moons
-
-
+from sklearn.datasets import make_blobs
+from sklearn.datasets import make_hastie_10_2
 # Basic config
-max_words = 1000
-batch_size = 32
-epochs = 5
+#max_words = 1000
+#batch_size = 32
+#epochs = 5
+output = ''
 results_history = []
 results_score = []
 results_acc = []
@@ -52,19 +53,21 @@ np.random.seed(1)
 parser = argparse.ArgumentParser(
 	description='Uses the Reuters dataset to compare the results of different optimization functions')
 	
-parser.add_argument('-w', '--words', action='store_true', default=1000,
+parser.add_argument('-w', '--words', type=int, action='store', default=1000,
 	help='max words to use (default: 1000)')
-parser.add_argument('-b', '--batch_size', action='store_true', default=32,
+parser.add_argument('-b', '--batch_size', action='store', default=32,
 	help='size of batches to use (default: 32)')
-parser.add_argument('-e', '--epochs', action='store_true', default=5,
+parser.add_argument('-e', '--epochs', action='store', default=5,
 	help='amount of epochs to use (default: 5)')
+parser.add_argument('-o', '--output_prefix', action='store', default='',
+	help='prefix for the output files (default: empty)')
 parser.add_argument('-f', '--test_function', action='store_true', default=False,
 	help='visualize optimizations using test functions (default: false)')
 
 
 args = parser.parse_args()
 
-def calculateModel(model, x_train, x_test, y_train, y_test, optimizer, epochs) :
+def calculateModel(model, x_train, x_test, y_train, y_test, optimizer, epochs, batch_size, output) :
 
 	print 'Using optimizer: ', optimizer
 
@@ -89,6 +92,9 @@ def calculateModel(model, x_train, x_test, y_train, y_test, optimizer, epochs) :
 
 	#vis(model, x_train, x_test, y_train, y_test, optimizer)
 
+	if not os.path.isdir('results/'+ output):
+		os.makedirs('results/'+ output)
+
 	#Accuracy plot
 	plt.plot(history.history['acc'])
 	plt.plot(history.history['val_acc'])
@@ -96,7 +102,7 @@ def calculateModel(model, x_train, x_test, y_train, y_test, optimizer, epochs) :
 	plt.ylabel('accuracy')
 	plt.xlabel('epoch')
 	plt.legend(['train', 'val'], loc='upper left')
-	plt.savefig('results/model_accuracy_' + optimizer +'.png')
+	plt.savefig('results/' + output + 'model_accuracy_' + optimizer +'.png')
 	plt.close()
 	#Loss plot
 	plt.plot(history.history['loss'])
@@ -105,14 +111,14 @@ def calculateModel(model, x_train, x_test, y_train, y_test, optimizer, epochs) :
 	plt.ylabel('loss')
 	plt.xlabel('epoch')
 	plt.legend(['train', 'val'], loc='upper left')
-	plt.savefig('results/model_loss_' + optimizer + '.png')
+	plt.savefig('results/' + output + 'model_loss_' + optimizer + '.png')
 	plt.close()
 	#plot_model(model, to_file='results/model_' + optimizer + '.png')
 
-	f = open('results/results.txt', 'a+')
-	f.write('Test score {0}: {1}'.format(optimizer, score[0]))
-	f.write('Test accuracy {0}: {1} \n'.format(optimizer, score[1]))
-	f.close()
+	#f = open('results/' + output + 'results.txt', 'a+')
+	#f.write('Test score {0}: {1}'.format(optimizer, score[0]))
+	#f.write('Test accuracy {0}: {1} \n'.format(optimizer, score[1]))
+	#f.close()
 	
 	return
 
@@ -134,7 +140,7 @@ def vis(model, x_train, x_test, y_train, y_test, optimizer):
 	grads = visualize_saliency(model, layer_idx, filter_indices=class_idx, seed_input=x_test[idx])
 	# Plot with 'jet' colormap to visualize as a heatmap.
 	
-	plt.savefig('results/vis1_' + optimizer + '.png')
+	plt.savefig('results/' + output + 'vis1_' + optimizer + '.png')
 
 	for class_idx in np.arange(10):    
 		indices = np.where(y_test[:, class_idx] == 1.)[0]
@@ -142,7 +148,7 @@ def vis(model, x_train, x_test, y_train, y_test, optimizer):
 
 		f, ax = plt.subplots(1, 4)
 		ax[0].imshow(x_test[idx][..., 0])
-		ax[0].savefig('results/vis2_' + optimizer + '.png')
+		ax[0].savefig('results/' + output + 'vis2_' + optimizer + '.png')
 
 		for i, modifier in enumerate([None, 'guided', 'relu']):
 			grads = visualize_saliency(model, layer_idx, filter_indices=class_idx, 
@@ -151,7 +157,7 @@ def vis(model, x_train, x_test, y_train, y_test, optimizer):
 				modifier = 'vanilla'
 			ax[i+1].set_title(modifier)    
 			ax[i+1].imshow(grads, cmap='jet')
-			ax[i+1].savefig('results/vis3_' + optimizer + '.png')
+			ax[i+1].savefig('results/' + output + 'vis3_' + optimizer + '.png')
 	return
 
 def init():
@@ -227,14 +233,42 @@ def bealeFunction(conf):
 
 	return
 
-def comPlot(results_history, results_score, results_acc, conf): 
+def comPlot(results_history, results_score, results_acc, conf, output): 
 	for history in results_history:
 		plt.plot(history.history['acc'])
 	plt.legend(['sgd','adam','rmsprop','adagrad','adamax','adadelta','nadam'], loc='upper left')
-	plt.title('model accuracy')
+	plt.title('model train accuracy')
 	plt.ylabel('accuracy')
 	plt.xlabel('epoch')
-	plt.savefig('results/total_model_accuracy.png')
+	plt.savefig('results/' + output + 'total_train_accuracy.png')
+	plt.close()
+
+	for history in results_history:
+		plt.plot(history.history['val_acc'])
+	plt.legend(['sgd','adam','rmsprop','adagrad','adamax','adadelta','nadam'], loc='upper left')
+	plt.title('model test accuracy')
+	plt.ylabel('accuracy')
+	plt.xlabel('epoch')
+	plt.savefig('results/' + output + 'total_val_accuracy.png')
+	plt.close()
+
+
+	for history in results_history:
+		plt.plot(history.history['loss'])
+	plt.legend(['sgd','adam','rmsprop','adagrad','adamax','adadelta','nadam'], loc='upper left')
+	plt.title('model loss')
+	plt.ylabel('loss')
+	plt.xlabel('epoch')
+	plt.savefig('results/' + output + 'total_train_loss.png')
+	plt.close()
+
+	for history in results_history:
+		plt.plot(history.history['val_loss'])
+	plt.legend(['sgd','adam','rmsprop','adagrad','adamax','adadelta','nadam'], loc='upper left')
+	plt.title('model test loss')
+	plt.ylabel('loss')
+	plt.xlabel('epoch')
+	plt.savefig('results/' + output + 'total_test_loss.png')
 	plt.close()
 
 	x = [0,1,2,3,4,5,6]
@@ -244,7 +278,7 @@ def comPlot(results_history, results_score, results_acc, conf):
 		plt.annotate(c, (x[i], results_score[i]))
 
 	plt.title('model score')
-	plt.savefig('results/total_opt_score.png')
+	plt.savefig('results/' + output + 'total_opt_score.png')
 	plt.close()
 
 	plt.scatter(x, results_acc)
@@ -252,7 +286,7 @@ def comPlot(results_history, results_score, results_acc, conf):
 		plt.annotate(c, (x[i], results_acc[i]))
 
 	plt.title('optimization accuracy')
-	plt.savefig('results/total_opt_acc.png')
+	plt.savefig('results/' + output + 'total_opt_acc.png')
 	plt.close()
 	return
 
@@ -315,6 +349,11 @@ def main():
 	max_words = args.words
 	epochs = args.epochs
 	batch_size = args.batch_size
+	output = args.output_prefix
+	batch_size = 32
+	epochs = 5
+
+	print 'max words ', max_words
 	# Loads reuters dataset 
 	# Dataset of 11,228 newswires from Reuters, labeled over 46 topics.
 	# Each wire is encoded as a sequence of word indexes.
@@ -374,18 +413,20 @@ def main():
 
 	print 'Building model...'
 	model = Sequential()
-	model.add(Dense(512, input_shape=(max_words,)))
-	model.add(Activation('relu'))
+	model.add(Dense(512, input_shape=(max_words,), activation='relu'))
+	#model.add(Activation('relu'))
 	model.add(Dropout(0.5))
+	#model.add(Dense(512, activation='relu'))
+	#model.add(Activation('relu'))
 	model.add(Dense(num_classes, activation='softmax', name='preds'))
 	#model.add(Activation('softmax'))
 
 	conf = ['sgd','adam','rmsprop','adagrad','adamax','adadelta','nadam']
 
-	#for o in conf:
-		#calculateModel(model, x_train, x_test, y_train, y_test, o, epochs)
+	for o in conf:
+		calculateModel(model, x_train, x_test, y_train, y_test, o, epochs, batch_size,output)
 
-	#comPlot(results_history, results_score, results_acc, conf)
+	comPlot(results_history, results_score, results_acc, conf,output)
 
 	#if args.test_function:
 	visOptimizations(conf)
@@ -411,7 +452,7 @@ if __name__ == '__main__':
 	mom = tf.train.MomentumOptimizer(learning_rate=0.075, momentum=0.94)
 	mom_ws = w_trajectory(trX, trY, mom, nbatch=16, niter=200)
 
-	adadelta = tf.train.AdadeltaOptimizer(learning_rate=0.05)
+	adadelta = tf.train.AdadeltaOptimizer(learning_rate=1.0, rho=0.95, epsilon=1e-3)
 	adadelta_ws = w_trajectory(trX, trY, adadelta, nbatch=16, niter=200)
 
 	adagrad = tf.train.AdagradOptimizer(learning_rate=0.5)
@@ -420,7 +461,7 @@ if __name__ == '__main__':
 	#adamax = tf.keras.optimizers.Adamax(lr=0.001)
 	#adamax_ws = w_trajectory(trX, trY, adamax, nbatch=16, niter=200)
 
-	rmsprop = tf.train.RMSPropOptimizer(learning_rate=0.01)
+	rmsprop = tf.train.RMSPropOptimizer(learning_rate=0.05)
 	rmsprop_ws = w_trajectory(trX, trY, rmsprop, nbatch=16, niter=200)
 
 	nadam = tf.contrib.opt.NadamOptimizer(learning_rate=0.07)

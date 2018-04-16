@@ -9,3 +9,14 @@ https://keras.io/losses/#usage-of-loss-functions
 https://hackernoon.com/visualizing-parts-of-convolutional-neural-networks-using-keras-and-cats-5cc01b214e59
 
 https://imgur.com/a/Hqolp
+https://github.com/wassname/viz_torch_optim/blob/master/main.ipynb
+https://github.com/wassname/viz_torch_optim
+
+https://github.com/keras-team/keras/blob/master/examples/cifar10_cnn.py
+
+https://pdfs.semanticscholar.org/c1bd/ccb25584cb29f7de2bad11b05b30889a8534.pdf
+https://upc-mai-dl.github.io/mlp-convnets-theory/
+https://arxiv.org/pdf/1412.6544.pdf
+http://www.aifounded.com/machine-learning/deep-loss/
+https://arxiv.org/pdf/1612.04010.pdf
+https://arxiv.org/pdf/1412.6980.pdf
