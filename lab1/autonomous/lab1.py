@@ -428,8 +428,8 @@ def main():
 
 	comPlot(results_history, results_score, results_acc, conf,output)
 
-	#if args.test_function:
-	visOptimizations(conf)
+	if args.test_function:
+		visOptimizations(conf)
 
 
 if __name__ == '__main__':
