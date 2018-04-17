@@ -201,6 +201,9 @@ def architecture(neurons, drop, nlayers, activation, activation_r, rnntype, num_
 
     :return:
     """
+    if num_classes == 0:
+        num_classes=1
+    
     RNN = LSTM if rnntype == 'LSTM' else GRU
     model = Sequential()
     if nlayers == 1:
