@@ -134,13 +134,13 @@ def _generate_dataset_multi_var(data, datasize, testsize, datavars, lag=1, ahead
 
     # trainx is without one series 
     # trainy is one series with the attributes needed (datavars)
-    train_x, train_y = train[:, :lag], train[:, datavars:, 0]
+    train_x, train_y = train[:, :lag], train[:, -1]
 
     # as well as last time, the reshape here isnt needed
-    test_data = data[datasize:datasize + testsize, 0:datavars]
+    test_data = data[datasize:datasize + testsize, :]
     test = lagged_matrix(test_data, lag=lag, ahead=ahead - 1)
 
-    test_x, test_y = test[:, :lag], test[:, datavars:, 0]
+    test_x, test_y = test[:, :lag], test[:, -1]
 
     return train_x, train_y, test_x, test_y
 
@@ -216,7 +216,7 @@ def architecture(neurons, drop, nlayers, activation, activation_r, rnntype, num_
         model.add(RNN(neurons, recurrent_dropout=drop, activation=activation,
                       recurrent_activation=activation_r, implementation=impl))
 
-    model.add(Dense(num_classes+1))
+    model.add(Dense(num_classes))
 
     return model
 
