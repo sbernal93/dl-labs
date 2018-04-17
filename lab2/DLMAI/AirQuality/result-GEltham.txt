@@ -1,1 +1,2 @@
-DATAS= 0, LAG= 6, AHEAD= 1, RNN= LSTM, NLAY= 1, NNEUR= 32, DROP= 0.00, ACT= tanh, RACT= hard_sigmoid, OPT= adam, R2Test = 0.79302, R2pers = 0.76403
+DATAS= 0, LAG= 6, AHEAD= 1, RNN= LSTM, NLAY= 1, NNEUR= 32, DROP= 0.00, ACT= tanh, RACT= hard_sigmoid, OPT= adam, R2Test = 0.79347, R2pers = 0.76403
+DATAS= 0, LAG= 6, AHEAD= 1, RNN= LSTM, NLAY= 1, NNEUR= 32, DROP= 0.00, ACT= tanh, RACT= hard_sigmoid, OPT= adam, R2Test = 0.79265, R2pers = 0.76403

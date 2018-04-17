@@ -117,29 +117,6 @@ def _generate_dataset_one_var(data, datasize, testsize, lag=1, ahead=1):
     return train_x, train_y, test_x, test_y
 
 
-def _generate_dataset_multi_var(data, datasize, testsize, vars, lag=1, ahead=1):
-
-    scaler = StandardScaler()
-    data = scaler.fit_transform(data)
-    # print('DATA Dim =', data.shape)
-
-    wind_train = data[:datasize, :]
-    # print('Train Dim =', wind_train.shape)
-
-    # the matrix is generated with 3 dimensions: (datasize, lag +1 (series), vars)
-    train = lagged_matrix(wind_train, lag=lag, ahead=ahead - 1)
-
-    # trainx is without one series 
-    # trainy is one series
-    train_x, train_y = train[:, :lag], train[:, -1:, 0:vars]
-
-    wind_test = data[datasize:datasize + testsize, 0:vars].reshape(-1, 1)
-    test = lagged_matrix(wind_test, lag=lag, ahead=ahead - 1)
-
-    test_x, test_y = test[:, :lag], test[:, -1:, 0:vars]
-
-    return train_x, train_y, test_x, test_y
-
 def generate_dataset(config, ahead=1, data_path=None):
     """
     Generates the dataset for training, test and validation
@@ -170,14 +147,6 @@ def generate_dataset(config, ahead=1, data_path=None):
                                          lag=lag, ahead=ahead)
     # Just add more options to generate datasets with more than one variable for predicting one value
     # or a sequence of values
-
-    # airq[datanames[0]][:, 0:3] for getting from one var to another
-    # reshape necessary? 4 prev case yields same matrix if (-1,3)
-    # datanames[0]=GEltham
-
-    if dataset > 0:
-        return _generate_dataset_multi_var(airq[datanames[0]][:, 0:dataset].reshape(-1, 1), datasize, testsize,
-                                      dataset, lag=lag, ahead=ahead)
 
     raise NameError('ERROR: No such dataset type')
 
@@ -277,7 +246,6 @@ if __name__ == '__main__':
         mcheck = ModelCheckpoint(filepath=modfile, monitor='val_loss', verbose=0, save_best_only=True,
                                  save_weights_only=False, mode='auto', period=1)
         cbacks.append(mcheck)
-
 
     model.fit(train_x, train_y, batch_size=config['training']['batch'],
               epochs=config['training']['epochs'],
