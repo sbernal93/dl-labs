@@ -1,0 +1,1 @@
+in AQ prediction validation is not used because we have a small amount of years, and splitting the final year would yield bad results
