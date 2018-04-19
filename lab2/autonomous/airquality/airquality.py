@@ -156,6 +156,8 @@ def generate_dataset(config, ahead=1, data_path=None):
     datanames = config['datanames']
     datasize = config['datasize']
     testsize = config['testsize']
+    datanames_to_use = config['datanames_to_use']
+
     vars = config['vars']
     lag = config['lag']
 
@@ -169,8 +171,23 @@ def generate_dataset(config, ahead=1, data_path=None):
         if vars is not None:
             airq[d] = airq[d][:, vars]
 
+    airqd = airq[datanames[0]]
+
+    # with the datanames_to_use config we use multiple sites to train the model
+    # we do this by building a bigger matrix and using a larger train and
+    # test that is relative in size to the size change of the data matrix
+    if datanames_to_use > 1:
+        datasize = datasize * datanames_to_use
+        testsize = testsize * datanames_to_use
+        i = datanames_to_use -1
+        for d in range(i):
+            #aq.append(airq[datanames[d]])
+            airqd = np.concatenate((airqd, airq[datanames[d]]))
+
+    #aqmat = np.array(aq)
+
     if dataset == 0:
-        return _generate_dataset_one_var(airq[datanames[0]][:, 0].reshape(-1, 1), datasize, testsize,
+        return _generate_dataset_one_var(airqd[:, 0].reshape(-1, 1), datasize, testsize,
                                          lag=lag, ahead=ahead)
     # Just add more options to generate datasets with more than one variable for predicting one value
     # or a sequence of values
@@ -189,7 +206,7 @@ def generate_dataset(config, ahead=1, data_path=None):
     # as a reshape(-1, 3) returns the same matrix. 
 
     if dataset > 0:
-        return _generate_dataset_multi_var(airq[datanames[0]][:, 0:dataset+1], datasize, testsize,
+        return _generate_dataset_multi_var(airqd[:, 0:dataset+1], datasize, testsize,
                                       dataset, lag=lag, ahead=ahead)
 
     raise NameError('ERROR: No such dataset type')

@@ -1,7 +1,7 @@
 {
   "data": {
     "datanames": ["GEltham", "GWesthorne", "BSladeGreen",  "GWoolwich"],
-    "datanames_to_use": 1,
+    "datanames_to_use": 4,
     "vars": [0,1,2,3,4],
     "datasize": 35064,
     "testsize": 8784,
