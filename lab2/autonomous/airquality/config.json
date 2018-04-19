@@ -1,10 +1,11 @@
 {
   "data": {
     "datanames": ["GEltham", "GWesthorne", "BSladeGreen",  "GWoolwich"],
+    "datanames_to_use": 1,
     "vars": [0,1,2,3,4],
     "datasize": 35064,
     "testsize": 8784,
-    "dataset": 0,
+    "dataset": 3,
     "lag": 6,
     "ahead": 1
   },

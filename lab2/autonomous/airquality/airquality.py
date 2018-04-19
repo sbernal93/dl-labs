@@ -189,7 +189,7 @@ def generate_dataset(config, ahead=1, data_path=None):
     # as a reshape(-1, 3) returns the same matrix. 
 
     if dataset > 0:
-        return _generate_dataset_multi_var(airq[datanames[0]][:, 0:dataset], datasize, testsize,
+        return _generate_dataset_multi_var(airq[datanames[0]][:, 0:dataset+1], datasize, testsize,
                                       dataset, lag=lag, ahead=ahead)
 
     raise NameError('ERROR: No such dataset type')
@@ -201,9 +201,9 @@ def architecture(neurons, drop, nlayers, activation, activation_r, rnntype, num_
 
     :return:
     """
-    if num_classes == 0:
-        num_classes=1
-    
+    #if num_classes == 0:
+    #    num_classes=1
+
     RNN = LSTM if rnntype == 'LSTM' else GRU
     model = Sequential()
     if nlayers == 1:
@@ -219,7 +219,7 @@ def architecture(neurons, drop, nlayers, activation, activation_r, rnntype, num_
         model.add(RNN(neurons, recurrent_dropout=drop, activation=activation,
                       recurrent_activation=activation_r, implementation=impl))
 
-    model.add(Dense(num_classes))
+    model.add(Dense(num_classes+1))
 
     return model
 
@@ -249,7 +249,8 @@ if __name__ == '__main__':
     # Modify conveniently with the path for your data
     aq_data_path = './'
 
-    train_x, train_y, test_x, test_y = generate_dataset(config['data'], ahead=ahead, data_path=aq_data_path)
+    train_x, train_y, test_x, test_y = generate_dataset(config['data'],
+     ahead=ahead, data_path=aq_data_path)
 
     ############################################
     # Model
