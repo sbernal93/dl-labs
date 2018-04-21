@@ -315,43 +315,54 @@ if __name__ == '__main__':
         cbacks.append(mcheck)
 
 
-    model.fit(train_x, train_y, batch_size=config['training']['batch'],
-              epochs=config['training']['epochs'],
-              validation_data=(test_x, test_y),
-              verbose=verbose, callbacks=cbacks)
-
-    ############################################
-    # Results
-
-    if args.best:
-        model = load_model(modfile)
-
-    score = model.evaluate(test_x, test_y, batch_size=config['training']['batch'], verbose=0)
-
-    print()
-    print('MSE test= ', score)
-    print('MSE test persistence =', mean_squared_error(test_y[ahead:], test_y[0:-ahead]))
-    test_yp = model.predict(test_x, batch_size=config['training']['batch'], verbose=0)
-    r2test = r2_score(test_y, test_yp)
-    r2pers = r2_score(test_y[ahead:, 0], test_y[0:-ahead, 0])
-    print('R2 test= ', r2test)
-    print('R2 test persistence =', r2pers)
-
+    predictit = config['data']['predict']
     resfile = open('result-%s.txt' % config['data']['datanames'][0], 'a')
-    resfile.write('DATAS= %d, LAG= %d, AHEAD= %d, RNN= %s, NLAY= %d, NNEUR= %d, DROP= %3.2f, ACT= %s, RACT= %s, '
-                  'OPT= %s, R2Test = %3.5f, R2pers = %3.5f\n' %
-                  (config['data']['dataset'],
-                   config['data']['lag'],
-                   config['data']['ahead'],
-                   config['arch']['rnn'],
-                   config['arch']['nlayers'],
-                   config['arch']['neurons'],
-                   config['arch']['drop'],
-                   config['arch']['activation'],
-                   config['arch']['activation_r'],
-                   config['training']['optimizer'],
-                   r2test, r2pers
-                   ))
+
+    for i in range(predictit):
+
+        model.fit(train_x, train_y, batch_size=config['training']['batch'],
+                  epochs=config['training']['epochs'],
+                  validation_data=(test_x, test_y),
+                  verbose=verbose, callbacks=cbacks)
+
+        ############################################
+        # Results
+
+        if args.best:
+            model = load_model(modfile)
+
+        score = model.evaluate(test_x, test_y, batch_size=config['training']['batch'], verbose=0)
+
+        print()
+        print('iteration=', i)
+        print('MSE test= ', score)
+        print('MSE test persistence =', mean_squared_error(test_y[ahead:], test_y[0:-ahead]))
+        test_yp = model.predict(test_x, batch_size=config['training']['batch'], verbose=0)
+        r2test = r2_score(test_y, test_yp)
+        r2pers = r2_score(test_y[ahead:, 0], test_y[0:-ahead, 0])
+        print('R2 test= ', r2test)
+        print('R2 test persistence =', r2pers)
+
+        resfile.write('DATAS= %d, LAG= %d, AHEAD= %d, RNN= %s, NLAY= %d, NNEUR= %d, DROP= %3.2f, ACT= %s, RACT= %s, '
+                      'OPT= %s, R2Test = %3.5f, R2pers = %3.5f, iteration = %d\n' %
+                      (config['data']['dataset'],
+                       config['data']['lag'],
+                       config['data']['ahead'],
+                       config['arch']['rnn'],
+                       config['arch']['nlayers'],
+                       config['arch']['neurons'],
+                       config['arch']['drop'],
+                       config['arch']['activation'],
+                       config['arch']['activation_r'],
+                       config['training']['optimizer'],
+                       r2test, r2pers,
+                       i
+                       ))
+
+        new = model.predict(train_x, batch_size=config['training']['batch'], verbose=0)
+        train_x = np.concatenate((train_x[:,1:config['data']['lag']],
+            new.reshape(-1,1,config['data']['dataset'] + 1)), axis=1)
+
     resfile.close()
 
     # Deletes the model file
