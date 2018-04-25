@@ -12,7 +12,7 @@
   },
   "arch": {
     "neurons": 32,
-    "rnn": "LSTM",
+    "rnn": "GRU",
     "drop": 0.0,
     "nlayers": 1,
     "activation": "tanh",
