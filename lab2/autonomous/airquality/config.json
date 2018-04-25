@@ -5,14 +5,14 @@
     "vars": [0,1,2,3,4,5,6,7,8],
     "datasize": 35064,
     "testsize": 8784,
-    "dataset": 3,
+    "dataset": 1,
     "lag": 6,
     "ahead": 1,
     "predict": 1
   },
   "arch": {
     "neurons": 32,
-    "rnn": "GRU",
+    "rnn": "LSTM",
     "drop": 0.0,
     "nlayers": 1,
     "activation": "tanh",

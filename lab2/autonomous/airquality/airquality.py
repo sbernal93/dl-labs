@@ -246,7 +246,7 @@ def architecture(neurons, drop, nlayers, activation, activation_r, rnntype, num_
 def graphs(results_history, results_score, results_msepers, results_r2pers, results_r2test):
     for history in results_history:
         plt.plot(history.history['loss'])
-    plt.legend(['1','2','3','4','5','6','7','8','9'], loc='upper left')
+    plt.legend(['1','2','3','4'], loc='upper left')
     plt.title('model train loss with variables')
     plt.ylabel('loss')
     plt.xlabel('epoch')
@@ -255,14 +255,14 @@ def graphs(results_history, results_score, results_msepers, results_r2pers, resu
 
     for history in results_history:
         plt.plot(history.history['val_loss'])
-    plt.legend(['1','2','3','4','5','6','7','8','9'], loc='upper left')
+    plt.legend(['1','2','3','4'], loc='upper left')
     plt.title('model validation loss with variables')
     plt.ylabel('loss')
     plt.xlabel('epoch')
     plt.savefig('total_test_loss.png')
     plt.close()
 
-    x = [1,2,3,4,5,6,7,8,9]
+    x = [1,2,3,4]
 
     plt.scatter(x, results_score)
     plt.title('model score')
@@ -306,11 +306,11 @@ if __name__ == '__main__':
     results_r2test = []
 
     config = load_config_file(args.config)
-    am = 9
-    config['data']['dataset'] = -1
+    am = 4
+    config['data']['datanames_to_use'] = -1
     #config['data']['datanames_to_use'] = -1
     for it in range(am):
-        config['data']['dataset'] +=1 
+        config['data']['datanames_to_use'] +=1 
         #config['data']['datanames_to_use'] +=1 
         ############################################
         # Data
