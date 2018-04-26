@@ -6,9 +6,9 @@
     "datasize": 35064,
     "testsize": 8784,
     "dataset": 1,
-    "lag": 10,
+    "lag": 6,
     "ahead": 1,
-    "predict": 12
+    "predict": 1
   },
   "arch": {
     "neurons": 32,

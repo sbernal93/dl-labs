@@ -246,7 +246,7 @@ def architecture(neurons, drop, nlayers, activation, activation_r, rnntype, num_
 def graphs(results_history, results_score, results_msepers, results_r2pers, results_r2test):
     for history in results_history:
         plt.plot(history.history['loss'])
-    plt.legend(['1','2','3','4','5','6','7','8','9','10','11','12'], loc='upper left')
+    plt.legend(['1','2'], loc='upper left')
     plt.title('model train loss with variables')
     plt.ylabel('loss')
     plt.xlabel('epoch')
@@ -255,14 +255,14 @@ def graphs(results_history, results_score, results_msepers, results_r2pers, resu
 
     for history in results_history:
         plt.plot(history.history['val_loss'])
-    plt.legend(['1','2','3','4','5','6','7','8','9','10','11','12'], loc='upper left')
+    plt.legend(['1','2'], loc='upper left')
     plt.title('model validation loss with variables')
     plt.ylabel('loss')
     plt.xlabel('epoch')
     plt.savefig('total_test_loss.png')
     plt.close()
 
-    x = [1,2,3,4,5,6,7,8,9,10,11,12]
+    x = [1,2]
 
     plt.scatter(x, results_score)
     plt.title('model score')
@@ -309,11 +309,11 @@ if __name__ == '__main__':
     am = 4
     #config['data']['datanames_to_use'] = -1
     #config['data']['datanames_to_use'] = -1
-    #for it in range(am):
+
         #config['data']['datanames_to_use'] +=1 
         #config['data']['datanames_to_use'] +=1 
         ############################################
-        # Data
+    # Data
     print('dataset: %d' % config['data']['dataset'])
     ahead = config['data']['ahead']
 
@@ -328,11 +328,13 @@ if __name__ == '__main__':
      ahead=ahead, data_path=aq_data_path)
 
 
-    predictit = config['data']['predict']
+    #predictit = config['data']['predict']
+    predictit = 1
     resfile = open('result-%s.txt' % config['data']['datanames'][0], 'a')
 
 
     for i in range(predictit):
+        config['arch']['nlayers'] = i
         ############################################
         # Model
 
@@ -424,9 +426,9 @@ if __name__ == '__main__':
                        i
                        ))
 
-        train_x = np.concatenate((train_x[:,1:config['data']['lag']],
-            train_y.reshape(-1,1,config['data']['dataset'] + 1)), axis=1)
-        train_y =  model.predict(train_x, batch_size=config['training']['batch'], verbose=0)
+        #train_x = np.concatenate((train_x[:,1:config['data']['lag']],
+            #train_y.reshape(-1,1,config['data']['dataset'] + 1)), axis=1)
+        #train_y =  model.predict(train_x, batch_size=config['training']['batch'], verbose=0)
 
         #test_x = np.concatenate((test_x[:,1:config['data']['lag']],
         #    test_y.reshape(-1,1,config['data']['dataset'] + 1)), axis=1)
