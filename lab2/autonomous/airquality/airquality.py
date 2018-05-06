@@ -189,8 +189,8 @@ def generate_dataset(config, ahead=1, data_path=None):
 
     #aqmat = np.array(aq)
 
-    if dataset == 0:
-        return _generate_dataset_one_var(airqd[:, 0].reshape(-1, 1), datasize, testsize,
+    #if dataset == 0:
+    return _generate_dataset_one_var(airqd[:, dataset].reshape(-1, 1), datasize, testsize,
                                          lag=lag, ahead=ahead)
     # Just add more options to generate datasets with more than one variable for predicting one value
     # or a sequence of values
@@ -208,9 +208,9 @@ def generate_dataset(config, ahead=1, data_path=None):
     # all in a column making it a matrix. For multiple variables the reshape isnt needed
     # as a reshape(-1, 3) returns the same matrix. 
 
-    if dataset > 0:
-        return _generate_dataset_multi_var(airqd[:, 0:dataset+1], datasize, testsize,
-                                      dataset, lag=lag, ahead=ahead)
+    #if dataset > 0:
+    #    return _generate_dataset_multi_var(airqd[:, 0:dataset+1], datasize, testsize,
+    #                                  dataset, lag=lag, ahead=ahead)
 
     raise NameError('ERROR: No such dataset type')
 
@@ -223,7 +223,7 @@ def architecture(neurons, drop, nlayers, activation, activation_r, rnntype, num_
     """
     #if num_classes == 0:
     #    num_classes=1
-
+    num_classes = 0
     RNN = LSTM if rnntype == 'LSTM' else GRU
     model = Sequential()
     if nlayers == 1:
@@ -246,7 +246,7 @@ def architecture(neurons, drop, nlayers, activation, activation_r, rnntype, num_
 def graphs(results_history, results_score, results_msepers, results_r2pers, results_r2test):
     for history in results_history:
         plt.plot(history.history['loss'])
-    plt.legend(['1','2'], loc='upper left')
+    plt.legend(['1','2','3','4','5','6','7','8','9'], loc='upper left')
     plt.title('model train loss with variables')
     plt.ylabel('loss')
     plt.xlabel('epoch')
@@ -255,14 +255,14 @@ def graphs(results_history, results_score, results_msepers, results_r2pers, resu
 
     for history in results_history:
         plt.plot(history.history['val_loss'])
-    plt.legend(['1','2'], loc='upper left')
+    plt.legend(['1','2','3','4','5','6','7','8','9'], loc='upper left')
     plt.title('model validation loss with variables')
     plt.ylabel('loss')
     plt.xlabel('epoch')
     plt.savefig('total_test_loss.png')
     plt.close()
 
-    x = [1,2]
+    x = [1,2,3,4,5,6,7,8,9]
 
     plt.scatter(x, results_score)
     plt.title('model score')
@@ -306,125 +306,127 @@ if __name__ == '__main__':
     results_r2test = []
 
     config = load_config_file(args.config)
-    am = 4
+    am = 9
     #config['data']['datanames_to_use'] = -1
     #config['data']['datanames_to_use'] = -1
-
+    config['data']['dataset'] = -1
+    for it in range(am):
         #config['data']['datanames_to_use'] +=1 
         #config['data']['datanames_to_use'] +=1 
+        config['data']['dataset'] += 1
         ############################################
-    # Data
-    print('dataset: %d' % config['data']['dataset'])
-    ahead = config['data']['ahead']
+        # Data
+        print('dataset: %d' % config['data']['dataset'])
+        ahead = config['data']['ahead']
 
-    if args.verbose:
-        print('-----------------------------------------------------------------------------')
-        print('Steps Ahead = %d ' % ahead)
-
-    # Modify conveniently with the path for your data
-    aq_data_path = './'
-
-    train_x, train_y, test_x, test_y = generate_dataset(config['data'],
-     ahead=ahead, data_path=aq_data_path)
-
-
-    #predictit = config['data']['predict']
-    predictit = 1
-    resfile = open('result-%s.txt' % config['data']['datanames'][0], 'a')
-
-
-    for i in range(predictit):
-        config['arch']['nlayers'] = i
-        ############################################
-        # Model
-
-        model = architecture(neurons=config['arch']['neurons'],
-                             drop=config['arch']['drop'],
-                             nlayers=config['arch']['nlayers'],
-                             activation=config['arch']['activation'],
-                             activation_r=config['arch']['activation_r'],
-                             rnntype=config['arch']['rnn'],
-                             num_classes=config['data']['dataset'],
-                             impl=impl)
         if args.verbose:
-            model.summary()
-            print('lag: ', config['data']['lag'],
-                  '/Neurons: ', config['arch']['neurons'],
-                  '/Layers: ', config['arch']['nlayers'],
-                  '/Activations:', config['arch']['activation'], config['arch']['activation_r'])
-            print('Tr:', train_x.shape, train_y.shape, 'Ts:', test_x.shape, test_y.shape)
+            print('-----------------------------------------------------------------------------')
+            print('Steps Ahead = %d ' % ahead)
+
+        # Modify conveniently with the path for your data
+        aq_data_path = './'
+
+        train_x, train_y, test_x, test_y = generate_dataset(config['data'],
+         ahead=ahead, data_path=aq_data_path)
+
+
+        #predictit = config['data']['predict']
+        predictit = 1
+        resfile = open('result-%s.txt' % config['data']['datanames'][0], 'a')
+
+
+        for i in range(predictit):
+            #config['arch']['nlayers'] = i
+            ############################################
+            # Model
+
+            model = architecture(neurons=config['arch']['neurons'],
+                                 drop=config['arch']['drop'],
+                                 nlayers=config['arch']['nlayers'],
+                                 activation=config['arch']['activation'],
+                                 activation_r=config['arch']['activation_r'],
+                                 rnntype=config['arch']['rnn'],
+                                 num_classes=config['data']['dataset'],
+                                 impl=impl)
+            if args.verbose:
+                model.summary()
+                print('lag: ', config['data']['lag'],
+                      '/Neurons: ', config['arch']['neurons'],
+                      '/Layers: ', config['arch']['nlayers'],
+                      '/Activations:', config['arch']['activation'], config['arch']['activation_r'])
+                print('Tr:', train_x.shape, train_y.shape, 'Ts:', test_x.shape, test_y.shape)
+                print()
+
+            ############################################
+            # Training
+
+            optimizer = config['training']['optimizer']
+
+            if optimizer == 'rmsprop':
+                if 'lrate' in config['training']:
+                    optimizer = RMSprop(lr=config['training']['lrate'])
+                else:
+                    optimizer = RMSprop(lr=0.001)
+
+            model.compile(loss='mean_squared_error', optimizer=optimizer)
+
+            cbacks = []
+
+            if args.tboard:
+                tensorboard = TensorBoard(log_dir="logs/{}".format(time()))
+                cbacks.append(tensorboard)
+
+            if args.best:
+                modfile = './model%d.h5' % int(time())
+                mcheck = ModelCheckpoint(filepath=modfile, monitor='val_loss', verbose=0, save_best_only=True,
+                                         save_weights_only=False, mode='auto', period=1)
+                cbacks.append(mcheck)
+
+
+            history = model.fit(train_x, train_y, batch_size=config['training']['batch'],
+                      epochs=config['training']['epochs'],
+                      validation_data=(test_x, test_y),
+                      verbose=verbose, callbacks=cbacks)
+
+            ############################################
+            # Results
+
+            if args.best:
+                model = load_model(modfile)
+
+            score = model.evaluate(test_x, test_y, batch_size=config['training']['batch'], verbose=0)
+
             print()
+            print('iteration=', i)
+            print('MSE test= ', score)
+            print('MSE test persistence =', mean_squared_error(test_y[ahead:], test_y[0:-ahead]))
+            test_yp = model.predict(test_x, batch_size=config['training']['batch'], verbose=0)
+            r2test = r2_score(test_y, test_yp)
+            r2pers = r2_score(test_y[ahead:, :], test_y[0:-ahead, :])
+            print('R2 test= ', r2test)
+            print('R2 test persistence =', r2pers)
 
-        ############################################
-        # Training
+            results_score.append(score)
+            results_msepers.append(mean_squared_error(test_y[ahead:], test_y[0:-ahead]))
+            results_r2pers.append(r2pers)
+            results_r2test.append(r2test)
+            results_history.append(history)
 
-        optimizer = config['training']['optimizer']
-
-        if optimizer == 'rmsprop':
-            if 'lrate' in config['training']:
-                optimizer = RMSprop(lr=config['training']['lrate'])
-            else:
-                optimizer = RMSprop(lr=0.001)
-
-        model.compile(loss='mean_squared_error', optimizer=optimizer)
-
-        cbacks = []
-
-        if args.tboard:
-            tensorboard = TensorBoard(log_dir="logs/{}".format(time()))
-            cbacks.append(tensorboard)
-
-        if args.best:
-            modfile = './model%d.h5' % int(time())
-            mcheck = ModelCheckpoint(filepath=modfile, monitor='val_loss', verbose=0, save_best_only=True,
-                                     save_weights_only=False, mode='auto', period=1)
-            cbacks.append(mcheck)
-
-
-        history = model.fit(train_x, train_y, batch_size=config['training']['batch'],
-                  epochs=config['training']['epochs'],
-                  validation_data=(test_x, test_y),
-                  verbose=verbose, callbacks=cbacks)
-
-        ############################################
-        # Results
-
-        if args.best:
-            model = load_model(modfile)
-
-        score = model.evaluate(test_x, test_y, batch_size=config['training']['batch'], verbose=0)
-
-        print()
-        print('iteration=', i)
-        print('MSE test= ', score)
-        print('MSE test persistence =', mean_squared_error(test_y[ahead:], test_y[0:-ahead]))
-        test_yp = model.predict(test_x, batch_size=config['training']['batch'], verbose=0)
-        r2test = r2_score(test_y, test_yp)
-        r2pers = r2_score(test_y[ahead:, :], test_y[0:-ahead, :])
-        print('R2 test= ', r2test)
-        print('R2 test persistence =', r2pers)
-
-        results_score.append(score)
-        results_msepers.append(mean_squared_error(test_y[ahead:], test_y[0:-ahead]))
-        results_r2pers.append(r2pers)
-        results_r2test.append(r2test)
-        results_history.append(history)
-
-        resfile.write('DATAS= %d, LAG= %d, AHEAD= %d, RNN= %s, NLAY= %d, NNEUR= %d, DROP= %3.2f, ACT= %s, RACT= %s, '
-                      'OPT= %s, R2Test = %3.5f, R2pers = %3.5f, iteration = %d\n' %
-                      (config['data']['dataset'],
-                       config['data']['lag'],
-                       config['data']['ahead'],
-                       config['arch']['rnn'],
-                       config['arch']['nlayers'],
-                       config['arch']['neurons'],
-                       config['arch']['drop'],
-                       config['arch']['activation'],
-                       config['arch']['activation_r'],
-                       config['training']['optimizer'],
-                       r2test, r2pers,
-                       i
-                       ))
+            resfile.write('DATAS= %d, LAG= %d, AHEAD= %d, RNN= %s, NLAY= %d, NNEUR= %d, DROP= %3.2f, ACT= %s, RACT= %s, '
+                          'OPT= %s, R2Test = %3.5f, R2pers = %3.5f, iteration = %d\n' %
+                          (config['data']['dataset'],
+                           config['data']['lag'],
+                           config['data']['ahead'],
+                           config['arch']['rnn'],
+                           config['arch']['nlayers'],
+                           config['arch']['neurons'],
+                           config['arch']['drop'],
+                           config['arch']['activation'],
+                           config['arch']['activation_r'],
+                           config['training']['optimizer'],
+                           r2test, r2pers,
+                           i
+                           ))
 
         #train_x = np.concatenate((train_x[:,1:config['data']['lag']],
             #train_y.reshape(-1,1,config['data']['dataset'] + 1)), axis=1)
